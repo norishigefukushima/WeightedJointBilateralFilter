@@ -1,6 +1,6 @@
 #include "util.h"
 
-void alphaBlend(Mat& src1, Mat& src2, double alpha,Mat& dest)
+void alphaBlend(const Mat& src1, const Mat& src2, double alpha, Mat& dest)
 {
 	int T;
 	Mat s1,s2;
@@ -25,7 +25,7 @@ void alphaBlend(Mat& src1, Mat& src2, double alpha,Mat& dest)
 	cv::addWeighted(s1,alpha,s2,1.0-alpha,0.0,dest);
 }
 
-void alphaBlend(Mat& src1, Mat& src2, Mat& alpha,Mat& dest)
+void alphaBlend(const Mat& src1, const Mat& src2, const Mat& alpha,Mat& dest)
 {
 	int T;
 	Mat s1,s2;
@@ -335,259 +335,29 @@ static void alphaBtest(Mat& src1, Mat& src2)
 		key = waitKey(1);
 	}
 }
-void xcvAddWeighted(IplImage* src1, double alpha, IplImage* src2, double beta, double gamma, IplImage* dest, IplImage* mask)
+
+
+void guiAlphaBlend(const Mat& src1, const Mat& src2)
 {
-	int a = cvRound(alpha*1024);
-	int b = cvRound(beta*1024);
-	int c = cvRound(gamma*1024);
-
-
-	if(mask==NULL)
-	{
-		if(c==0)
-		{
-			//#pragma omp parallel for
-			for(int j=0;j<src1->height;j++)
-			{
-				unsigned char* ss1=(unsigned char*)src1->imageData+src1->widthStep*j;
-				unsigned char* ss2=(unsigned char*)src2->imageData+src2->widthStep*j;
-				unsigned char* dd=(unsigned char*)dest->imageData+dest->widthStep*j;
-
-				for(int i=0;i<src1->width;i++)
-				{
-					int v = a*(ss1[3*i]) + b*(ss2[3*i]);
-					dd[3*i]=(unsigned char)(v>>10);
-					v = a*(ss1[3*i+1]) + b*(ss2[3*i+1]);
-					dd[3*i+1]=(unsigned char)(v>>10);
-					v = a*(ss1[3*i+2]) + b*(ss2[3*i+2]);
-					dd[3*i+2]=(unsigned char)(v>>10);
-				}
-			}	
-		}
-		else
-		{
-			//#pragma omp parallel for
-			for(int j=0;j<src1->height;j++)
-			{
-				unsigned char* ss1=(unsigned char*)src1->imageData+src1->widthStep*j;
-				unsigned char* ss2=(unsigned char*)src2->imageData+src2->widthStep*j;
-				unsigned char* dd=(unsigned char*)dest->imageData+dest->widthStep*j;
-
-				for(int i=0;i<src1->width;i++)
-				{
-					int v = a*(ss1[3*i]) + b*(ss2[3*i])+c;
-					v=(v>>10);
-					v=(v>255)?255:v;
-					v=(v<0)?0:v;
-					dd[3*i]=(unsigned char)v;
-
-					v = a*(ss1[3*i+1]) + b*(ss2[3*i+1])+c;
-					v=(v>>10);
-					v=(v>255)?255:v;
-					v=(v<0)?0:v;
-					dd[3*i+1]=(unsigned char)v;
-
-					v = a*(ss1[3*i+2]) + b*(ss2[3*i+2])+c;
-					v=(v>>10);
-					v=(v>255)?255:v;
-					v=(v<0)?0:v;
-					dd[3*i+2]=(unsigned char)v;
-				}
-			}	
-		}
-	}
-	else
-	{
-		if(c==0)
-		{
-			//#pragma omp parallel for
-			for(int j=0;j<src1->height;j++)
-			{
-				unsigned char* ss1=(unsigned char*)src1->imageData+src1->widthStep*j;
-				unsigned char* ss2=(unsigned char*)src2->imageData+src2->widthStep*j;
-				unsigned char* dd=(unsigned char*)dest->imageData+dest->widthStep*j;
-				unsigned char* mm=(unsigned char*)mask->imageData+mask->widthStep*j;;
-
-				for(int i=0;i<src1->width;i++)
-				{
-					if(mm[i]!=0)
-					{
-						int v = a*(ss1[3*i]) + b*(ss2[3*i]);
-						dd[3*i]=(unsigned char)(v>>10);
-						v = a*(ss1[3*i+1]) + b*(ss2[3*i+1]);
-						dd[3*i+1]=(unsigned char)(v>>10);
-						v = a*(ss1[3*i+2]) + b*(ss2[3*i+2]);
-						dd[3*i+2]=(unsigned char)(v>>10);
-					}
-				}
-			}	
-		}
-		else
-		{
-			//#pragma omp parallel for
-			for(int j=0;j<src1->height;j++)
-			{
-				unsigned char* ss1=(unsigned char*)src1->imageData+src1->widthStep*j;
-				unsigned char* ss2=(unsigned char*)src2->imageData+src2->widthStep*j;
-				unsigned char* dd=(unsigned char*)dest->imageData+dest->widthStep*j;
-				unsigned char* mm=(unsigned char*)mask->imageData+mask->widthStep*j;;
-
-				for(int i=0;i<src1->width;i++)
-				{
-					if(mm[i]!=0)
-					{
-						int v = a*(ss1[3*i]) + b*(ss2[3*i])+c;
-						v=(v>>10);
-						v=(v>255)?255:v;
-						v=(v<0)?0:v;
-						dd[3*i]=(unsigned char)v;
-
-						v = a*(ss1[3*i+1]) + b*(ss2[3*i+1])+c;
-						v=(v>>10);
-						v=(v>255)?255:v;
-						v=(v<0)?0:v;
-						dd[3*i+1]=(unsigned char)v;
-
-						v = a*(ss1[3*i+2]) + b*(ss2[3*i+2])+c;
-						v=(v>>10);
-						v=(v>255)?255:v;
-						v=(v<0)?0:v;
-						dd[3*i+2]=(unsigned char)v;
-					}
-				}
-			}	
-		}
-	}
-}
-void xcvGUIAlphaBlend(IplImage* _image, IplImage* _image2, IplImage* mask)
-{
-	cv::Ptr<IplImage> mask_;
-	if(mask==NULL)
-	{
-		mask_ = cvCreateImage(cvGetSize(_image),8,1);
-		cvSet(mask_,cvScalarAll(255));
-	}
-	else
-	{
-		mask_ = cvCreateImage(cvGetSize(_image),8,1);
-		cvCopy(mask,mask_);
-	}
-
-	IplImage* _depth = _image2;
-	char* winName = "Image alpha blend";
-	IplImage* depth = cvCreateImage(cvGetSize(_image),8,3);
-	IplImage* image = cvCreateImage(cvGetSize(_image),8,3);
-	if(_depth->nChannels==1)
-	{
-		cvCvtColor(_depth,depth,CV_GRAY2BGR);
-	}
-	else
-	{
-		cvCopy(_depth,depth);
-	}
-	if(_image->nChannels==1)
-	{
-		cvCvtColor(_image,image,CV_GRAY2BGR);
-	}
-	else
-	{
-		cvCopy(_image,image);
-	}
-	cvNamedWindow(winName,CV_WINDOW_AUTOSIZE);
-
-	int x = 50;
-	cvCreateTrackbar("alpha",winName,&x,100,NULL);
-
-	IplImage* render = cvCloneImage(image);
-
+	Mat s1,s2;
+	if(src1.channels()==1)cvtColor(src1,s1,CV_GRAY2BGR);
+	else s1 = src1;
+	if(src2.channels()==1)cvtColor(src2,s2,CV_GRAY2BGR);
+	else s2 = src2;
+	namedWindow("alphaBlend");
+	int a = 0;
+	createTrackbar("a","alphaBlend",&a,100);
 	int key = 0;
-	bool flag = false;
+	Mat show;
 	while(key!='q')
 	{
-		cvZero(render);
-		xcvAddWeighted(image,1.0-x/100.0,depth,x/100.0,0,render,mask_);
-
-		if(key =='?')
+		addWeighted(s1,1.0-a/100.0,s2,a/100.0,0.0,show);
+		imshow("alphaBlend",show);
+		key = waitKey(1);
+		if(key=='f')
 		{
-			cout<<"*** Help message ***"<<endl;
-			cout<<"f: "<<"Flip input image1 and 2"<<endl;
-			cout<<"p: "<<"Print PSNR"<<endl;
-			cout<<"s: "<<"Save blending image (blend.png)"<<endl;
-			cout<<"q: "<<"Quit"<<endl;
-			cout<<"********************"<<endl;
+			a = (a > 0) ? 0 : 100;
+			setTrackbarPos("a","alphaBlend",a);
 		}
-		if(key =='p')
-		{
-			//cout<<"PSNR (Y): "<<xcvCalcPSNR(image,depth,0,CV_BGR2YUV)<<" [dB]"<<endl;
-		}
-		if(key =='s')
-		{
-			cvSaveImage("blend.png",render);
-		}
-		if(key =='f')
-		{
-			if(flag)
-			{
-				x=0;
-				cvSetTrackbarPos("alpha",winName,x);
-			}
-			else
-			{
-				x=100;
-				cvSetTrackbarPos("alpha",winName,x);
-			}
-			flag = (flag)?false:true;
-		}
-		/*if(key ==XCV_KEY_ARROW_LEFT)
-		{
-		x--;
-		cvSetTrackbarPos("alpha",winName,x);
-		}
-		if(key ==XCV_KEY_ARROW_RIGHT)
-		{
-		x++;
-		cvSetTrackbarPos("alpha",winName,x);
-		}*/
-		cvShowImage(winName,render);
-		key = cvWaitKey(33);
-	}
-
-	cvReleaseImage(&render);
-	cvReleaseImage(&depth);
-	cvReleaseImage(&image);
-	cvDestroyWindow(winName);
-}
-void guiAlphaBlend(cv::Mat& image1, cv::Mat& image2,cv::Mat& mask)
-{
-	if (mask.empty())
-	{
-
-		if(image1.type()==CV_16S&&image2.type()==CV_16S)
-		{
-			Mat a,b;
-			image1.convertTo(a,CV_8U);
-			image2.convertTo(b,CV_8U);
-			xcvGUIAlphaBlend(&IplImage(a),&IplImage(b),NULL);		
-		}
-		else
-		{
-			xcvGUIAlphaBlend(&IplImage(image1),&IplImage(image2),NULL);	
-		}
-	}
-	else
-	{
-		if(image1.type()==CV_16S&&image2.type()==CV_16S)
-		{
-			Mat a,b;
-			image1.convertTo(a,CV_8U);
-			image2.convertTo(b,CV_8U);
-			xcvGUIAlphaBlend(&IplImage(a),&IplImage(b),&IplImage(mask));		
-		}
-		else
-		{
-			xcvGUIAlphaBlend(&IplImage(image1),&IplImage(image2),&IplImage(mask));		
-
-		}
-
 	}
 }

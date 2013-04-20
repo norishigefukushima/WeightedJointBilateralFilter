@@ -265,8 +265,6 @@ template<> struct ColumnSum<float, float> : public BaseColumnFilter
     vector<float> sum;
 };
 
-
-
 cv::Ptr<cv::FilterEngine> createBoxFilterFFF(int cn, Size ksize,
                     Point anchor, bool normalize, int borderType )
 {
@@ -1297,7 +1295,6 @@ static void weightedBoxFilter(Mat& src, Mat& weight, Mat& dest,int type, Size ks
 }
 void weightedAdaptiveGuidedFilter(Mat& src, Mat& guidance,Mat& guidance2, Mat& weight,Mat& dest, const int radius,const float eps)
 {
-
 	if(src.channels()!=1 && guidance.channels()!=1)
 	{
 		cout<<"Please input gray scale image."<<endl;
@@ -1724,34 +1721,36 @@ struct GuidedFilterInvoler
 	int r;
 	float eps;
 	int MAXINDEX;
-
+	bool isGuide;
 	GuidedFilterInvoler(const Mat& src_,Mat& dest_, int r_,float eps_, int maxindex): 
-	src2(&src_), guidance2(&Mat()), dest2(&dest_), r(r_), eps(eps_),MAXINDEX(maxindex)
+	src2(&src_), dest2(&dest_), r(r_), eps(eps_),MAXINDEX(maxindex)
 	{	
+		isGuide = false;
 	}
 
 	GuidedFilterInvoler(const Mat& src_, const Mat& guidance_, Mat& dest_,int r_,float eps_, int maxindex): 
 	src2(&src_), guidance2(&guidance_), dest2(&dest_), r(r_), eps(eps_),MAXINDEX(maxindex)
 	{
+		isGuide = true;
 	}
 
 	void operator() (int i) const
 	{
 		Mat src = (Mat)*src2;
 		Mat dest = (Mat)*dest2;
-		Mat guidance = (Mat)*guidance2;
 		
 		if(MAXINDEX==1)
 		{
 			Mat dst = dest;
 			Mat s = src;
 			
-			if(guidance.empty())
+			if(!isGuide)
 			{
 				guidedFilter(s,dst,r,eps);
 			}
 			else
 			{
+				Mat guidance = (Mat)*guidance2;
 				guidedFilter(s,guidance,dst,r,eps);
 			}
 			return ;
@@ -1814,14 +1813,15 @@ struct GuidedFilterInvoler
 				}
 			}
 			Mat ds = Mat::zeros(Size(wss,hss),dest.type());
-
 			Mat s = src(Rect(wst,hst,wss,hss)).clone();
-			if(guidance.empty())
+			
+			if(!isGuide)
 			{
 				guidedFilter(s,ds,r,eps);
 			}
 			else
 			{
+				Mat guidance = (Mat)*guidance2;
 				Mat g = guidance(Rect(wst,hst,wss,hss)).clone();
 				guidedFilter(s,g,ds,r,eps);
 			}
@@ -1859,7 +1859,7 @@ struct GuidedFilterInvoler
 	}
 };
 
-	void guidedFilterTBB(const Mat& src, Mat& dest, int d,float eps, const int threadmax)
+	void guidedFilterTBB(const Mat& src, Mat& dest, int r,float eps, const int threadmax)
 	{
 		dest.create(src.size(),src.type());
 
@@ -1867,11 +1867,11 @@ struct GuidedFilterInvoler
 		int* idx = &index[0];
 		for(int i=0;i<threadmax;i++)index[i]=i;
 		
-		GuidedFilterInvoler body(src,dest,d,eps,threadmax);
+		GuidedFilterInvoler body(src,dest,r,eps,threadmax);
 		parallel_do(idx,idx+threadmax,body);
 	}
 
-	void guidedFilterTBB(const Mat& src, const Mat& guidance, Mat& dest, int d,float eps, const int threadmax)
+	void guidedFilterTBB(const Mat& src, const Mat& guidance, Mat& dest, int r,float eps, const int threadmax)
 	{
 		dest.create(src.size(),src.type());
 
@@ -1879,7 +1879,7 @@ struct GuidedFilterInvoler
 		int* idx = &index[0];
 		for(int i=0;i<threadmax;i++)index[i]=i;
 		
-		GuidedFilterInvoler body(src,guidance,dest,d,eps,threadmax);
+		GuidedFilterInvoler body(src,guidance,dest,r,eps,threadmax);
 		parallel_do(idx,idx+threadmax,body);
 	}
 

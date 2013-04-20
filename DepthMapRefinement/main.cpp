@@ -3,7 +3,11 @@
 #include "viewSynthesis.h"
 #include <opencv2/opencv.hpp>
 #include <omp.h>
+
+#ifdef HAVE_TBB
 #pragma comment(lib, "tbb.lib")
+#endif
+
 #ifdef _DEBUG
 //#pragma comment(lib, "opencv_video240d.lib")
 //#pragma comment(lib, "opencv_ts240d.lib")
@@ -187,7 +191,6 @@ void testKinectRefinement()
 	cout<<"sw=8: filtered by proposed filter fastest setting\n";
 	cout<<"press 'v' for calling view synthesis function\n";
 
-
 	bool isGray = false;
 	while(key!='q')
 	{
@@ -223,14 +226,14 @@ void testKinectRefinement()
 
 			/*srcDepth.copyTo(filledDepth);
 			filledDepth.convertTo(filledDepthf,CV_32F);
-			
+
 			for(int i=0;i<pr;i++)
 			{
-				Mat w,filledDepth2;
+			Mat w,filledDepth2;
 			compare(filledDepthf,0,w,cv::CMP_NE);
 			Mat wmap;w.convertTo(wmap,CV_32F);
-				weightedJointBilateralFilter(filledDepthf,wmap,srcImagef,filledDepth2,Size(d,d),sc,ss);
-				jointNearestFilter(filledDepth2,filledDepthf,Size(d,d),filledDepthf);
+			weightedJointBilateralFilter(filledDepthf,wmap,srcImagef,filledDepth2,Size(d,d),sc,ss);
+			jointNearestFilter(filledDepth2,filledDepthf,Size(d,d),filledDepthf);
 			}*/
 			filledDepthf.convertTo(depthout,CV_16U);
 		}
@@ -267,7 +270,6 @@ void testKinectRefinement()
 		{
 			CalcTime t("Guided src only");
 			Mat filteredDepthf = Mat::ones(srcDepth.size(),CV_32F);
-			//guidedFilterTBB(filledDepthf,srcImagef,filteredDepthf,d,sc*0.01,8);
 			guidedFilterTBB(filledDepthf,filteredDepthf,d,(float)(sc*0.1),8);
 			filteredDepthf.convertTo(depthout,CV_16U);
 		}
@@ -275,17 +277,17 @@ void testKinectRefinement()
 		{
 			Mat weight;
 			{
-			CalcTime t("Prop. ");
-			Mat filteredDepthf = Mat::ones(srcDepth.size(),CV_32F);
+				CalcTime t("Prop. ");
+				Mat filteredDepthf = Mat::ones(srcDepth.size(),CV_32F);
 
-			//bilateralWeightMap(srcImagef,weight,Size(d,d),sc,ss);
-			trilateralWeightMap(srcImagef,filledDepthf,weight,Size(d,d),sc,sc2,ss);
-			weightedJointBilateralFilter(filledDepthf,weight,srcImagef,filteredDepthf,Size(d,d),sc,ss,0);
+				//bilateralWeightMap(srcImagef,weight,Size(d,d),sc,ss);
+				trilateralWeightMap(srcImagef,filledDepthf,weight,Size(d,d),sc,sc2,ss);
+				weightedJointBilateralFilter(filledDepthf,weight,srcImagef,filteredDepthf,Size(d,d),sc,ss,0);
 
-			filteredDepthf.convertTo(depthout,CV_16U);
-			jointNearestFilter(depthout,filledDepth,Size(2*pr+1,2*pr+1),depthout);
+				filteredDepthf.convertTo(depthout,CV_16U);
+				jointNearestFilter(depthout,filledDepth,Size(2*pr+1,2*pr+1),depthout);
 			}
-			
+
 			double minv,maxv;
 			minMaxLoc(weight,&minv,&maxv);
 			Mat wmap;
@@ -340,6 +342,8 @@ void testKinectRefinement()
 		key = waitKey(1);
 	}
 }
+
+
 void testStereoRefinementEval()
 {
 	string wname = "refinement";
@@ -354,7 +358,7 @@ void testStereoRefinementEval()
 	char name[128];
 
 	sprintf(name,"%s%s/%s.png",dir,sequence,"groundtruth");
-	Mat gt = imread(name,0);//必ずグレースケールで入力
+	Mat gt = imread(name,0);
 
 	sprintf(name,"%s%s/%s.png",dir,sequence,"all");
 	Mat all=imread(name,0);
@@ -364,10 +368,10 @@ void testStereoRefinementEval()
 	Mat nonocc=imread(name,0);
 	StereoEval eval(gt,nonocc,all,disc,amp);
 
-	Mat src_ = imread("dataset/img_stereo/dp.png",0);
+	Mat src_ = imread("dataset/img_stereo/sgm.png",0);
 	fillOcclusion(src_, 0);
 	//removeStreakingNoise(src_,src_,8);
-	Mat srcg = imread("dataset/img_stereo/dp.png",0);
+	Mat srcg = imread("dataset/img_stereo/sgm.png",0);
 	//Mat guide = imread("dataset/img_stereo/dp.png",0);
 
 	Mat guide_ = imread("dataset/img_stereo/teddy.png",0);
@@ -1407,6 +1411,22 @@ void testBilateral()
 		cout<<"color  8u: SSE4 normal:"<<getPSNR(destBaseColor8u,destSSE4Color8u)<<" dB"<<endl;
 		cout<<"color 32f: SSE4 normal:"<<getPSNR(destBaseColor32f,destSSE4Color32f)<<" dB"<<endl;
 
+		cout<<"======================================="<<endl;
+		cout<<"2'. Bilateral filter SSE Order2 test: exp(cx) -> 1.0 - 1/(c*c)*x*x"<<endl;
+		{
+			CalcTime t("SSE4  bilateral gray   8u");
+			bilateralFilter(src,destSSE4Gray8u,Size(d,d),sc,ss,BILATERAL_ORDER2,cv::BORDER_REPLICATE);
+		}
+		{
+			CalcTime t("SSE4  bilateral color  8u");
+			bilateralFilter(guidec,destSSE4Color8u,Size(d,d),sc,ss,BILATERAL_ORDER2,cv::BORDER_REPLICATE);
+		}
+		
+		cout<<"gray   8u: SSE4 normal:"<<getPSNR(destBaseGray8u,destSSE4Gray8u)<<" dB"<<endl;
+		//cout<<"gray  32f: SSE4 normal:"<<getPSNR(destBaseGray32f,destSSE4Gray32f)<<" dB"<<endl;
+		cout<<"color  8u: SSE4 normal:"<<getPSNR(destBaseColor8u,destSSE4Color8u)<<" dB"<<endl;
+		//cout<<"color 32f: SSE4 normal:"<<getPSNR(destBaseColor32f,destSSE4Color32f)<<" dB"<<endl;
+		cout<<"32f function is not implimented yet\n";
 		//Mat mask;compare(destBaseColor32f,destSSE4Color32f,mask,cv::CMP_EQ);imshow("mask",mask);
 
 		cout<<"======================================="<<endl;
@@ -1547,6 +1567,6 @@ int main()
 	testTrilateral();
 	jointNearestTest();*/
 
-	//testStereoRefinementEval();
-	testKinectRefinement();
+	testStereoRefinementEval();
+	//testKinectRefinement();
 }

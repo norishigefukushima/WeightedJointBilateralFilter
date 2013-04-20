@@ -16,10 +16,10 @@ using namespace std;
 
 double getPSNR(Mat& src1, Mat& src2);
 
-void alphaBlend(Mat& src1, Mat& src2, double alpha,Mat& dest);
-void alphaBlend(Mat& src1, Mat& src2, Mat& alpha,Mat& dest);
+void alphaBlend(const Mat& src1, const Mat& src2, double alpha, Mat& dest);
+void alphaBlend(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest);
 
-void guiAlphaBlend(Mat& src1, Mat& src2);
+void guiAlphaBlend(const Mat& src1, const Mat& src2);
 
 class ConsoleImage
 {

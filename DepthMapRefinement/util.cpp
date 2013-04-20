@@ -212,24 +212,3 @@ void ConsoleImage::operator()(cv::Scalar color, const char *format, ...)
 	//addText(show,buff,Point(20,20+count*20),font);
 	count++;
 }
-
-void guiAlphaBlend(Mat& src1, Mat& src2)
-{
-	Mat s1,s2;
-	if(src1.channels()==1)cvtColor(src1,s1,CV_GRAY2BGR);
-	else s1 = src1;
-	if(src2.channels()==1)cvtColor(src2,s2,CV_GRAY2BGR);
-	else s2 = src2;
-	namedWindow("alphaBlend");
-	int a = 0;
-	createTrackbar("a","alphaBlend",&a,100);
-	int key = 0;
-	Mat show;
-	while(key!='q')
-	{
-		addWeighted(s1,a/100.0,s2,1.0-a/100.0,0.0,show);
-		imshow("alphaBlend",show);
-		key = waitKey(1);
-	}
-	
-}

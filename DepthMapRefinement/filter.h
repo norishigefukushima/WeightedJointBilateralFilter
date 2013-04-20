@@ -1,4 +1,3 @@
-#define HAVE_TBB
 #ifndef _FILTER_H_
 #define _FILTER_H_
 
@@ -6,12 +5,11 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
-#include <smmintrin.h>
+
+#include "config.h"
 
 using namespace cv;
 using namespace std;
-
-#define CV_SSE4_1 1
 
 //box filter extention for 32F32F SIMD 
 void boxFilter2( InputArray _src, OutputArray _dst, int ddepth,
@@ -80,8 +78,8 @@ void weightedJointBilateralRefinement_8u( const vector<Mat>& srcVolume, Mat& wei
 void guidedFilter(const cv::Mat& src, const cv::Mat& guidance, cv::Mat& dest, const int radius,const float eps);
 void guidedFilter(const cv::Mat& src, cv::Mat& dest, const int radius,const float eps);
 
-void guidedFilterTBB(const Mat& src, Mat& dest, int d,float eps, const int threadmax);
-void guidedFilterTBB(const Mat& src,const Mat& guidance, Mat& dest, int d,float eps, const int threadmax);
+void guidedFilterTBB(const Mat& src, Mat& dest, int radius,float eps, const int threadmax);
+void guidedFilterTBB(const Mat& src,const Mat& guidance, Mat& dest, int radius,float eps, const int threadmax);
 void guidedFilterBF(const Mat& src, Mat& guidance, Mat& dest, const int radius,const float eps);
 
 #endif

@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{34EA9848-5102-468D-9748-331BBBB2A662}</ProjectGuid>
+    <ProjectGuid>{0C2A0AF8-44AE-4AFD-8987-C690D3DF14A6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>bilateralTest</RootNamespace>
+    <RootNamespace>DepthMapRefinement</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -67,15 +67,8 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
-      <CompileAs>Default</CompileAs>
-      <OpenMPSupport>true</OpenMPSupport>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <DisableSpecificWarnings>4309</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -85,24 +78,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="config.h" />
+    <ClInclude Include="filter.h" />
+    <ClInclude Include="util.h" />
+    <ClInclude Include="viewSynthesis.h" />
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="alphaBlend.cpp" />
     <ClCompile Include="bilateralFilter.cpp" />
     <ClCompile Include="depthEval.cpp" />
     <ClCompile Include="depthFilter.cpp" />
     <ClCompile Include="guidedFilter.cpp" />
     <ClCompile Include="jointBilateralFilter.cpp" />
+    <ClCompile Include="jointNearest.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="minmaxFilter.cpp" />
-    <ClCompile Include="jointNearest.cpp" />
     <ClCompile Include="split.cpp" />
     <ClCompile Include="trilateralFilter.cpp" />
     <ClCompile Include="util.cpp" />
     <ClCompile Include="viewSynthesis.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="filter.h" />
-    <ClInclude Include="util.h" />
-    <ClInclude Include="viewSynthesis.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
