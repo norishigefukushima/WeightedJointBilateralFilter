@@ -6,8 +6,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 
-#include "config.h"
-
+#include <opencv2/core/internal.hpp>
 using namespace cv;
 using namespace std;
 

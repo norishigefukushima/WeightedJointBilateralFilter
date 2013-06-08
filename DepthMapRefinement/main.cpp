@@ -4,44 +4,40 @@
 #include <opencv2/opencv.hpp>
 #include <omp.h>
 
-#ifdef HAVE_TBB
-#pragma comment(lib, "tbb.lib")
-#endif
-
 #ifdef _DEBUG
-//#pragma comment(lib, "opencv_video240d.lib")
-//#pragma comment(lib, "opencv_ts240d.lib")
-//#pragma comment(lib, "opencv_stitching240d.lib")
-//#pragma comment(lib, "opencv_photo240d.lib")
-//#pragma comment(lib, "opencv_objdetect240d.lib")
-//#pragma comment(lib, "opencv_ml240d.lib")
-//#pragma comment(lib, "opencv_legacy240d.lib")
-#pragma comment(lib, "opencv_imgproc240d.lib")
-#pragma comment(lib, "opencv_highgui240d.lib")
+//#pragma comment(lib, "opencv_video245d.lib")
+//#pragma comment(lib, "opencv_ts245d.lib")
+//#pragma comment(lib, "opencv_stitching245d.lib")
+//#pragma comment(lib, "opencv_photo245d.lib")
+//#pragma comment(lib, "opencv_objdetect245d.lib")
+//#pragma comment(lib, "opencv_ml245d.lib")
+//#pragma comment(lib, "opencv_legacy245d.lib")
+#pragma comment(lib, "opencv_imgproc245d.lib")
+#pragma comment(lib, "opencv_highgui245d.lib")
 //#pragma comment(lib, "opencv_haartraining_engine.lib")
-//#pragma comment(lib, "opencv_gpu240d.lib")
-//#pragma comment(lib, "opencv_flann240d.lib")
-//#pragma comment(lib, "opencv_features2d240d.lib")
-#pragma comment(lib, "opencv_core240d.lib")
-#pragma comment(lib, "opencv_contrib240d.lib")
-#pragma comment(lib, "opencv_calib3d240d.lib")
+//#pragma comment(lib, "opencv_gpu245d.lib")
+//#pragma comment(lib, "opencv_flann245d.lib")
+//#pragma comment(lib, "opencv_features2d245d.lib")
+#pragma comment(lib, "opencv_core245d.lib")
+#pragma comment(lib, "opencv_contrib245d.lib")
+#pragma comment(lib, "opencv_calib3d245d.lib")
 #else
-//#pragma comment(lib, "opencv_video240.lib")
-//#pragma comment(lib, "opencv_ts240.lib")
-//#pragma comment(lib, "opencv_stitching240.lib")
-//#pragma comment(lib, "opencv_photo240.lib")
-//#pragma comment(lib, "opencv_objdetect240.lib")
-//#pragma comment(lib, "opencv_ml240.lib")
-//#pragma comment(lib, "opencv_legacy240.lib")
-#pragma comment(lib, "opencv_imgproc240.lib")
-#pragma comment(lib, "opencv_highgui240.lib")
+//#pragma comment(lib, "opencv_video245.lib")
+//#pragma comment(lib, "opencv_ts245.lib")
+//#pragma comment(lib, "opencv_stitching245.lib")
+//#pragma comment(lib, "opencv_photo245.lib")
+//#pragma comment(lib, "opencv_objdetect245.lib")
+//#pragma comment(lib, "opencv_ml245.lib")
+//#pragma comment(lib, "opencv_legacy245.lib")
+#pragma comment(lib, "opencv_imgproc245.lib")
+#pragma comment(lib, "opencv_highgui245.lib")
 //#pragma comment(lib, "opencv_haartraining_engine.lib")
-//#pragma comment(lib, "opencv_gpu240.lib")
-//#pragma comment(lib, "opencv_flann240.lib")
-//#pragma comment(lib, "opencv_features2d240.lib")
-#pragma comment(lib, "opencv_core240.lib")
-#pragma comment(lib, "opencv_contrib240.lib")
-#pragma comment(lib, "opencv_calib3d240.lib")
+//#pragma comment(lib, "opencv_gpu245.lib")
+//#pragma comment(lib, "opencv_flann245.lib")
+//#pragma comment(lib, "opencv_features2d245.lib")
+#pragma comment(lib, "opencv_core245.lib")
+#pragma comment(lib, "opencv_contrib245.lib")
+#pragma comment(lib, "opencv_calib3d245.lib")
 #endif
 
 void jointNearestTest()
@@ -392,7 +388,7 @@ void testStereoRefinementEval()
 	}
 
 	int sw = 0;createTrackbar("sw",wname,&sw,20-1);
-	int r = 7;createTrackbar("r",wname,&r,20);
+	int r = 11;createTrackbar("r",wname,&r,20);
 
 	int sigS = 70;createTrackbar("s",wname,&sigS,200);
 	int sigC = 100;createTrackbar("c",wname,&sigC,1500);

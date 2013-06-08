@@ -1,5 +1,4 @@
 #include "filter.h"
-#include <opencv2/core/internal.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //baseline 
@@ -571,7 +570,7 @@ void trilateralFilter( const Mat& src,const Mat& joint, Mat& dst, int d, double 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //weighted trilatateral 32f!
-class WeightedTrilateralFilter_32f_InvokerSSE4
+class WeightedTrilateralFilter_32f_InvokerSSE4 : public cv::ParallelLoopBody
 {
 public:
 	WeightedTrilateralFilter_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _weightMap,const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
@@ -581,7 +580,7 @@ public:
 	{
 	}
 
-	virtual void operator() (const BlockedRange& range) const
+	virtual void operator() (const Range& range) const
 	{
 		int i, j, k;
 
@@ -599,11 +598,11 @@ public:
 			int CV_DECL_ALIGNED(16) buf[4];
 			int CV_DECL_ALIGNED(16) gbuf[4];
 
-			float* sptr = (float*)temp->ptr<float>(range.begin()+radiusV) + 4 * (radiusH/4 + 1);
-			float* gptr = (float*)guide->ptr<float>(range.begin()+radiusV) + 4 * (radiusH/4 + 1);
-			float* wptr = (float*)weightMap->ptr<float>(range.begin()+radiusV) + 4 * (radiusH/4 + 1);//wmap!
+			float* sptr = (float*)temp->ptr<float>(range.start+radiusV) + 4 * (radiusH/4 + 1);
+			float* gptr = (float*)guide->ptr<float>(range.start+radiusV) + 4 * (radiusH/4 + 1);
+			float* wptr = (float*)weightMap->ptr<float>(range.start+radiusV) + 4 * (radiusH/4 + 1);//wmap!
 
-			float* dptr = dest->ptr<float>(range.begin());
+			float* dptr = dest->ptr<float>(range.start);
 
 			const int sstep = temp->cols;
 			const int gstep = guide->cols;
@@ -611,7 +610,7 @@ public:
 
 			const int dstep = dest->cols;
 
-			for(i = range.begin(); i != range.end(); i++,dptr+=dstep,sptr+=sstep,gptr+=gstep,wptr+=wstep)//wmap!
+			for(i = range.start; i != range.end; i++,dptr+=dstep,sptr+=sstep,gptr+=gstep,wptr+=wstep)//wmap!
 			{
 				j=0;
 #if CV_SSE4_1
@@ -684,13 +683,13 @@ public:
 			int CV_DECL_ALIGNED(16) buf[4];
 			int CV_DECL_ALIGNED(16) gbuf[4];
 
-			float* sptr = (float*)temp->ptr<float>(range.begin()+radiusV) + 4 * (radiusH/4 + 1);
-			float* gptrr = (float*)guide->ptr<float>(3*radiusV+3*range.begin()  ) + 4 * (radiusH/4 + 1);
-			float* gptrg = (float*)guide->ptr<float>(3*radiusV+3*range.begin()+1) + 4 * (radiusH/4 + 1);
-			float* gptrb = (float*)guide->ptr<float>(3*radiusV+3*range.begin()+2) + 4 * (radiusH/4 + 1);
-			float* wptr = (float*)weightMap->ptr<float>(range.begin()+radiusV) + 4 * (radiusH/4 + 1);//wmap!
+			float* sptr = (float*)temp->ptr<float>(range.start+radiusV) + 4 * (radiusH/4 + 1);
+			float* gptrr = (float*)guide->ptr<float>(3*radiusV+3*range.start  ) + 4 * (radiusH/4 + 1);
+			float* gptrg = (float*)guide->ptr<float>(3*radiusV+3*range.start+1) + 4 * (radiusH/4 + 1);
+			float* gptrb = (float*)guide->ptr<float>(3*radiusV+3*range.start+2) + 4 * (radiusH/4 + 1);
+			float* wptr = (float*)weightMap->ptr<float>(range.start+radiusV) + 4 * (radiusH/4 + 1);//wmap!
 
-			float* dptr = dest->ptr<float>(range.begin());
+			float* dptr = dest->ptr<float>(range.start);
 
 			const int sstep = temp->cols;
 			const int gstep = 3*guide->cols;
@@ -698,7 +697,7 @@ public:
 
 			const int dstep = dest->cols;
 
-			for(i = range.begin(); i != range.end(); i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptr+=sstep, dptr+=dstep ,wptr+=wstep)//wmap!
+			for(i = range.start; i != range.end; i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptr+=sstep, dptr+=dstep ,wptr+=wstep)//wmap!
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -791,15 +790,15 @@ public:
 			int CV_DECL_ALIGNED(16) buf[4];
 			int CV_DECL_ALIGNED(16) gbuf[4];
 
-			float* sptrr =  (float*)temp->ptr<float>(3*radiusV+3*range.begin()  ) + 4 * (radiusH/4 + 1);
-			float* sptrg =  (float*)temp->ptr<float>(3*radiusV+3*range.begin()+1) + 4 * (radiusH/4 + 1);
-			float* sptrb =  (float*)temp->ptr<float>(3*radiusV+3*range.begin()+2) + 4 * (radiusH/4 + 1);
-			float* gptrr = (float*)guide->ptr<float>(3*radiusV+3*range.begin()  ) + 4 * (radiusH/4 + 1);
-			float* gptrg = (float*)guide->ptr<float>(3*radiusV+3*range.begin()+1) + 4 * (radiusH/4 + 1);
-			float* gptrb = (float*)guide->ptr<float>(3*radiusV+3*range.begin()+2) + 4 * (radiusH/4 + 1);
-			float* wptr = (float*)weightMap->ptr<float>(range.begin()+radiusV) + 4 * (radiusH/4 + 1);//wmap!
+			float* sptrr =  (float*)temp->ptr<float>(3*radiusV+3*range.start  ) + 4 * (radiusH/4 + 1);
+			float* sptrg =  (float*)temp->ptr<float>(3*radiusV+3*range.start+1) + 4 * (radiusH/4 + 1);
+			float* sptrb =  (float*)temp->ptr<float>(3*radiusV+3*range.start+2) + 4 * (radiusH/4 + 1);
+			float* gptrr = (float*)guide->ptr<float>(3*radiusV+3*range.start  ) + 4 * (radiusH/4 + 1);
+			float* gptrg = (float*)guide->ptr<float>(3*radiusV+3*range.start+1) + 4 * (radiusH/4 + 1);
+			float* gptrb = (float*)guide->ptr<float>(3*radiusV+3*range.start+2) + 4 * (radiusH/4 + 1);
+			float* wptr = (float*)weightMap->ptr<float>(range.start+radiusV) + 4 * (radiusH/4 + 1);//wmap!
 
-			float* dptr = dest->ptr<float>(range.begin());
+			float* dptr = dest->ptr<float>(range.start);
 
 			const int sstep = 3*temp->cols;
 			const int gstep = 3*guide->cols;
@@ -807,7 +806,7 @@ public:
 
 			const int dstep = 3*dest->cols;
 
-			for(i = range.begin(); i != range.end(); i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep ,wptr+=wstep)//wmap!
+			for(i = range.start; i != range.end; i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep ,wptr+=wstep)//wmap!
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -943,13 +942,13 @@ public:
 			int CV_DECL_ALIGNED(16) buf[4];
 			int CV_DECL_ALIGNED(16) gbuf[4];
 
-			float* sptrr = (float*)temp->ptr<float>(3*radiusV+3*range.begin()  ) + 4 * (radiusH/4 + 1);
-			float* sptrg = (float*)temp->ptr<float>(3*radiusV+3*range.begin()+1) + 4 * (radiusH/4 + 1);
-			float* sptrb = (float*)temp->ptr<float>(3*radiusV+3*range.begin()+2) + 4 * (radiusH/4 + 1);
-			float* gptr = (float*)guide->ptr<float>(  radiusV+  range.begin()) + 4 * (radiusH/4 + 1);
-			float* wptr = (float*)weightMap->ptr<float>(range.begin()+radiusV) + 4 * (radiusH/4 + 1);//wmap!
+			float* sptrr = (float*)temp->ptr<float>(3*radiusV+3*range.start  ) + 4 * (radiusH/4 + 1);
+			float* sptrg = (float*)temp->ptr<float>(3*radiusV+3*range.start+1) + 4 * (radiusH/4 + 1);
+			float* sptrb = (float*)temp->ptr<float>(3*radiusV+3*range.start+2) + 4 * (radiusH/4 + 1);
+			float* gptr = (float*)guide->ptr<float>(  radiusV+  range.start) + 4 * (radiusH/4 + 1);
+			float* wptr = (float*)weightMap->ptr<float>(range.start+radiusV) + 4 * (radiusH/4 + 1);//wmap!
 
-			float* dptr = dest->ptr<float>(range.begin());
+			float* dptr = dest->ptr<float>(range.start);
 
 			const int sstep = 3*temp->cols;
 			const int gstep =   guide->cols;
@@ -957,7 +956,7 @@ public:
 
 			const int dstep = 3*dest->cols;
 
-			for(i = range.begin(); i != range.end(); i++,gptr+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep ,wptr+=wstep)//wmap!
+			for(i = range.start; i != range.end; i++,gptr+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep ,wptr+=wstep)//wmap!
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -1076,7 +1075,7 @@ private:
 	float *space_weight, *color_weight, *guide_color_weight;
 };
 
-class WeightedTrilateralFilter_8u_InvokerSSE4
+class WeightedTrilateralFilter_8u_InvokerSSE4 : public cv::ParallelLoopBody
 {
 public:
 	WeightedTrilateralFilter_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _weightMap,const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
@@ -1086,7 +1085,7 @@ public:
 	{
 	}
 
-	virtual void operator() (const BlockedRange& range) const
+	virtual void operator() (const Range& range) const
 	{
 		int i, j, k;
 		int cn = (temp->rows-2*radiusV)/dest->rows;
@@ -1102,11 +1101,11 @@ public:
 			uchar CV_DECL_ALIGNED(16) buf[16];
 			uchar CV_DECL_ALIGNED(16) gbuf[16];
 
-			uchar* sptr = (uchar*)temp->ptr(range.begin()+radiusV) + 16 * (radiusH/16 + 1);
-			uchar* gptr = (uchar*)guide->ptr(range.begin()+radiusV) + 16 * (radiusH/16 + 1);
-			float* wptr = (float*)weightMap->ptr<float>(range.begin()+radiusV)+ 16 * (radiusH/16 + 1);
+			uchar* sptr = (uchar*)temp->ptr(range.start+radiusV) + 16 * (radiusH/16 + 1);
+			uchar* gptr = (uchar*)guide->ptr(range.start+radiusV) + 16 * (radiusH/16 + 1);
+			float* wptr = (float*)weightMap->ptr<float>(range.start+radiusV)+ 16 * (radiusH/16 + 1);
 
-			uchar* dptr = dest->ptr(range.begin());
+			uchar* dptr = dest->ptr(range.start);
 
 			const int sstep = temp->cols;
 			const int gstep = guide->cols;
@@ -1114,7 +1113,7 @@ public:
 
 			const int dstep = dest->cols;
 
-			for(i = range.begin(); i != range.end(); i++,dptr+=dstep,sptr+=sstep,gptr+=gstep,wptr+=wstep )
+			for(i = range.start; i != range.end; i++,dptr+=dstep,sptr+=sstep,gptr+=gstep,wptr+=wstep )
 			{
 				j=0;
 #if CV_SSE4_1
@@ -1237,15 +1236,15 @@ public:
 
 			const int dstep = dest->cols;
 
-			uchar* sptr = (uchar*)temp->ptr(range.begin()+radiusV) + 16 * (radiusH/16 + 1);
-			uchar* gptrr = (uchar*)guide->ptr(3*radiusV+3*range.begin()  ) + 16 * (radiusH/16 + 1);
-			uchar* gptrg = (uchar*)guide->ptr(3*radiusV+3*range.begin()+1) + 16 * (radiusH/16 + 1);
-			uchar* gptrb = (uchar*)guide->ptr(3*radiusV+3*range.begin()+2) + 16 * (radiusH/16 + 1);
-			float* wptr = (float*)weightMap->ptr<float>(range.begin()+radiusV)+ 16 * (radiusH/16 + 1);
+			uchar* sptr = (uchar*)temp->ptr(range.start+radiusV) + 16 * (radiusH/16 + 1);
+			uchar* gptrr = (uchar*)guide->ptr(3*radiusV+3*range.start  ) + 16 * (radiusH/16 + 1);
+			uchar* gptrg = (uchar*)guide->ptr(3*radiusV+3*range.start+1) + 16 * (radiusH/16 + 1);
+			uchar* gptrb = (uchar*)guide->ptr(3*radiusV+3*range.start+2) + 16 * (radiusH/16 + 1);
+			float* wptr = (float*)weightMap->ptr<float>(range.start+radiusV)+ 16 * (radiusH/16 + 1);
 
-			uchar* dptr = dest->ptr(range.begin());
+			uchar* dptr = dest->ptr(range.start);
 
-			for(i = range.begin(); i != range.end(); i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptr+=sstep, dptr+=dstep,wptr+=wstep )
+			for(i = range.start; i != range.end; i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptr+=sstep, dptr+=dstep,wptr+=wstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -1404,17 +1403,17 @@ public:
 
 			const int dstep = 3*dest->cols;
 
-			uchar* sptrr =  (uchar*)temp->ptr(3*radiusV+3*range.begin()  ) + 16 * (radiusH/16 + 1);
-			uchar* sptrg =  (uchar*)temp->ptr(3*radiusV+3*range.begin()+1) + 16 * (radiusH/16 + 1);
-			uchar* sptrb =  (uchar*)temp->ptr(3*radiusV+3*range.begin()+2) + 16 * (radiusH/16 + 1);
-			uchar* gptrr = (uchar*)guide->ptr(3*radiusV+3*range.begin()  ) + 16 * (radiusH/16 + 1);
-			uchar* gptrg = (uchar*)guide->ptr(3*radiusV+3*range.begin()+1) + 16 * (radiusH/16 + 1);
-			uchar* gptrb = (uchar*)guide->ptr(3*radiusV+3*range.begin()+2) + 16 * (radiusH/16 + 1);
-			float* wptr = (float*)weightMap->ptr<float>(range.begin()+radiusV)+ 16 * (radiusH/16 + 1);
+			uchar* sptrr =  (uchar*)temp->ptr(3*radiusV+3*range.start  ) + 16 * (radiusH/16 + 1);
+			uchar* sptrg =  (uchar*)temp->ptr(3*radiusV+3*range.start+1) + 16 * (radiusH/16 + 1);
+			uchar* sptrb =  (uchar*)temp->ptr(3*radiusV+3*range.start+2) + 16 * (radiusH/16 + 1);
+			uchar* gptrr = (uchar*)guide->ptr(3*radiusV+3*range.start  ) + 16 * (radiusH/16 + 1);
+			uchar* gptrg = (uchar*)guide->ptr(3*radiusV+3*range.start+1) + 16 * (radiusH/16 + 1);
+			uchar* gptrb = (uchar*)guide->ptr(3*radiusV+3*range.start+2) + 16 * (radiusH/16 + 1);
+			float* wptr = (float*)weightMap->ptr<float>(range.start+radiusV)+ 16 * (radiusH/16 + 1);
 
-			uchar* dptr = dest->ptr(range.begin());
+			uchar* dptr = dest->ptr(range.start);
 
-			for(i = range.begin(); i != range.end(); i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep, wptr+=wstep )
+			for(i = range.start; i != range.end; i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep, wptr+=wstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -1694,15 +1693,15 @@ public:
 
 			const int dstep = 3*dest->cols;
 
-			uchar* sptrr = (uchar*)temp->ptr(3*radiusV+3*range.begin()  ) + 16 * (radiusH/16 + 1);
-			uchar* sptrg = (uchar*)temp->ptr(3*radiusV+3*range.begin()+1) + 16 * (radiusH/16 + 1);
-			uchar* sptrb = (uchar*)temp->ptr(3*radiusV+3*range.begin()+2) + 16 * (radiusH/16 + 1);
-			uchar* gptr = (uchar*)guide->ptr(  radiusV+  range.begin()) + 16 * (radiusH/16 + 1);
-			float* wptr = (float*)weightMap->ptr<float>(range.begin()+radiusV)+ 16 * (radiusH/16 + 1);
+			uchar* sptrr = (uchar*)temp->ptr(3*radiusV+3*range.start  ) + 16 * (radiusH/16 + 1);
+			uchar* sptrg = (uchar*)temp->ptr(3*radiusV+3*range.start+1) + 16 * (radiusH/16 + 1);
+			uchar* sptrb = (uchar*)temp->ptr(3*radiusV+3*range.start+2) + 16 * (radiusH/16 + 1);
+			uchar* gptr = (uchar*)guide->ptr(  radiusV+  range.start) + 16 * (radiusH/16 + 1);
+			float* wptr = (float*)weightMap->ptr<float>(range.start+radiusV)+ 16 * (radiusH/16 + 1);
 
-			uchar* dptr = dest->ptr(range.begin());
+			uchar* dptr = dest->ptr(range.start);
 
-			for(i = range.begin(); i != range.end(); i++,gptr+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep,wptr+=wstep )
+			for(i = range.start; i != range.end; i++,gptr+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep,wptr+=wstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -1951,7 +1950,7 @@ private:
 };
 
 
-class TrilateralFilter_32f_InvokerSSE4
+class TrilateralFilter_32f_InvokerSSE4 : public cv::ParallelLoopBody
 {
 public:
 	TrilateralFilter_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
@@ -1961,7 +1960,7 @@ public:
 	{
 	}
 
-	virtual void operator() (const BlockedRange& range) const
+	virtual void operator() (const Range& range) const
 	{
 		int i, j, k;
 		int cn = (temp->rows-2*radiusV)/dest->rows;
@@ -1978,13 +1977,13 @@ public:
 			int CV_DECL_ALIGNED(16) buf[4];
 			int CV_DECL_ALIGNED(16) gbuf[4];
 
-			float* sptr = (float*)temp->ptr<float>(range.begin()+radiusV) + 4 * (radiusH/4 + 1);
-			float* gptr = (float*)guide->ptr<float>(range.begin()+radiusV) + 4 * (radiusH/4 + 1);
-			float* dptr = dest->ptr<float>(range.begin());
+			float* sptr = (float*)temp->ptr<float>(range.start+radiusV) + 4 * (radiusH/4 + 1);
+			float* gptr = (float*)guide->ptr<float>(range.start+radiusV) + 4 * (radiusH/4 + 1);
+			float* dptr = dest->ptr<float>(range.start);
 			const int sstep = temp->cols;
 			const int gstep = guide->cols;
 			const int dstep = dest->cols;
-			for(i = range.begin(); i != range.end(); i++,dptr+=dstep,sptr+=sstep,gptr+=gstep )
+			for(i = range.start; i != range.end; i++,dptr+=dstep,sptr+=sstep,gptr+=gstep )
 			{
 				j=0;
 #if CV_SSE4_1
@@ -2054,13 +2053,13 @@ public:
 			const int gstep = 3*guide->cols;
 			const int dstep = dest->cols;
 
-			float* sptr = (float*)temp->ptr<float>(range.begin()+radiusV) + 4 * (radiusH/4 + 1);
-			float* gptrr = (float*)guide->ptr<float>(3*radiusV+3*range.begin()  ) + 4 * (radiusH/4 + 1);
-			float* gptrg = (float*)guide->ptr<float>(3*radiusV+3*range.begin()+1) + 4 * (radiusH/4 + 1);
-			float* gptrb = (float*)guide->ptr<float>(3*radiusV+3*range.begin()+2) + 4 * (radiusH/4 + 1);
+			float* sptr = (float*)temp->ptr<float>(range.start+radiusV) + 4 * (radiusH/4 + 1);
+			float* gptrr = (float*)guide->ptr<float>(3*radiusV+3*range.start  ) + 4 * (radiusH/4 + 1);
+			float* gptrg = (float*)guide->ptr<float>(3*radiusV+3*range.start+1) + 4 * (radiusH/4 + 1);
+			float* gptrb = (float*)guide->ptr<float>(3*radiusV+3*range.start+2) + 4 * (radiusH/4 + 1);
 
-			float* dptr = dest->ptr<float>(range.begin());
-			for(i = range.begin(); i != range.end(); i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptr+=sstep, dptr+=dstep )
+			float* dptr = dest->ptr<float>(range.start);
+			for(i = range.start; i != range.end; i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptr+=sstep, dptr+=dstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -2150,14 +2149,14 @@ public:
 			const int gstep = 3*guide->cols;
 			const int dstep = 3*dest->cols;
 
-			float* sptrr =  (float*)temp->ptr<float>(3*radiusV+3*range.begin()  ) + 4 * (radiusH/4 + 1);
-			float* sptrg =  (float*)temp->ptr<float>(3*radiusV+3*range.begin()+1) + 4 * (radiusH/4 + 1);
-			float* sptrb =  (float*)temp->ptr<float>(3*radiusV+3*range.begin()+2) + 4 * (radiusH/4 + 1);
-			float* gptrr = (float*)guide->ptr<float>(3*radiusV+3*range.begin()  ) + 4 * (radiusH/4 + 1);
-			float* gptrg = (float*)guide->ptr<float>(3*radiusV+3*range.begin()+1) + 4 * (radiusH/4 + 1);
-			float* gptrb = (float*)guide->ptr<float>(3*radiusV+3*range.begin()+2) + 4 * (radiusH/4 + 1);
-			float* dptr = dest->ptr<float>(range.begin());
-			for(i = range.begin(); i != range.end(); i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep )
+			float* sptrr =  (float*)temp->ptr<float>(3*radiusV+3*range.start  ) + 4 * (radiusH/4 + 1);
+			float* sptrg =  (float*)temp->ptr<float>(3*radiusV+3*range.start+1) + 4 * (radiusH/4 + 1);
+			float* sptrb =  (float*)temp->ptr<float>(3*radiusV+3*range.start+2) + 4 * (radiusH/4 + 1);
+			float* gptrr = (float*)guide->ptr<float>(3*radiusV+3*range.start  ) + 4 * (radiusH/4 + 1);
+			float* gptrg = (float*)guide->ptr<float>(3*radiusV+3*range.start+1) + 4 * (radiusH/4 + 1);
+			float* gptrb = (float*)guide->ptr<float>(3*radiusV+3*range.start+2) + 4 * (radiusH/4 + 1);
+			float* dptr = dest->ptr<float>(range.start);
+			for(i = range.start; i != range.end; i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -2287,14 +2286,14 @@ public:
 			const int gstep =   guide->cols;
 			const int dstep = 3*dest->cols;
 
-			float* sptrr = (float*)temp->ptr<float>(3*radiusV+3*range.begin()  ) + 4 * (radiusH/4 + 1);
-			float* sptrg = (float*)temp->ptr<float>(3*radiusV+3*range.begin()+1) + 4 * (radiusH/4 + 1);
-			float* sptrb = (float*)temp->ptr<float>(3*radiusV+3*range.begin()+2) + 4 * (radiusH/4 + 1);
-			float* gptr = (float*)guide->ptr<float>(  radiusV+  range.begin())   + 4 * (radiusH/4 + 1);
+			float* sptrr = (float*)temp->ptr<float>(3*radiusV+3*range.start  ) + 4 * (radiusH/4 + 1);
+			float* sptrg = (float*)temp->ptr<float>(3*radiusV+3*range.start+1) + 4 * (radiusH/4 + 1);
+			float* sptrb = (float*)temp->ptr<float>(3*radiusV+3*range.start+2) + 4 * (radiusH/4 + 1);
+			float* gptr = (float*)guide->ptr<float>(  radiusV+  range.start)   + 4 * (radiusH/4 + 1);
 
-			float* dptr = dest->ptr<float>(range.begin());
+			float* dptr = dest->ptr<float>(range.start);
 
-			for(i = range.begin(); i != range.end(); i++,gptr+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep )
+			for(i = range.start; i != range.end; i++,gptr+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -2403,7 +2402,7 @@ private:
 	float *space_weight, *color_weight, *guide_color_weight;
 };
 
-class TrilateralFilter_8u_InvokerSSE4
+class TrilateralFilter_8u_InvokerSSE4 : public cv::ParallelLoopBody
 {
 public:
 	TrilateralFilter_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
@@ -2413,7 +2412,7 @@ public:
 	{
 	}
 
-	virtual void operator() (const BlockedRange& range) const
+	virtual void operator() (const Range& range) const
 	{
 		int i, j, k;
 		int cn = (temp->rows-2*radiusV)/dest->rows;
@@ -2428,17 +2427,17 @@ public:
 			uchar CV_DECL_ALIGNED(16) buf[16];
 			uchar CV_DECL_ALIGNED(16) gbuf[16];
 
-			uchar* sptr = (uchar*)temp->ptr(range.begin()+radiusV) + 16 * (radiusH/16 + 1);
-			uchar* gptr = (uchar*)guide->ptr(range.begin()+radiusV) + 16 * (radiusH/16 + 1);
+			uchar* sptr = (uchar*)temp->ptr(range.start+radiusV) + 16 * (radiusH/16 + 1);
+			uchar* gptr = (uchar*)guide->ptr(range.start+radiusV) + 16 * (radiusH/16 + 1);
 
-			uchar* dptr = dest->ptr(range.begin());
+			uchar* dptr = dest->ptr(range.start);
 
 			const int sstep = temp->cols;
 			const int gstep = guide->cols;
 
 			const int dstep = dest->cols;
 
-			for(i = range.begin(); i != range.end(); i++,dptr+=dstep,sptr+=sstep,gptr+=gstep )
+			for(i = range.start; i != range.end; i++,dptr+=dstep,sptr+=sstep,gptr+=gstep )
 			{
 				j=0;
 #if CV_SSE4_1
@@ -2554,14 +2553,14 @@ public:
 
 			const int dstep = dest->cols;
 
-			uchar* sptr = (uchar*)temp->ptr(range.begin()+radiusV) + 16 * (radiusH/16 + 1);
-			uchar* gptrr = (uchar*)guide->ptr(3*radiusV+3*range.begin()  ) + 16 * (radiusH/16 + 1);
-			uchar* gptrg = (uchar*)guide->ptr(3*radiusV+3*range.begin()+1) + 16 * (radiusH/16 + 1);
-			uchar* gptrb = (uchar*)guide->ptr(3*radiusV+3*range.begin()+2) + 16 * (radiusH/16 + 1);
+			uchar* sptr = (uchar*)temp->ptr(range.start+radiusV) + 16 * (radiusH/16 + 1);
+			uchar* gptrr = (uchar*)guide->ptr(3*radiusV+3*range.start  ) + 16 * (radiusH/16 + 1);
+			uchar* gptrg = (uchar*)guide->ptr(3*radiusV+3*range.start+1) + 16 * (radiusH/16 + 1);
+			uchar* gptrb = (uchar*)guide->ptr(3*radiusV+3*range.start+2) + 16 * (radiusH/16 + 1);
 
-			uchar* dptr = dest->ptr(range.begin());
+			uchar* dptr = dest->ptr(range.start);
 
-			for(i = range.begin(); i != range.end(); i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptr+=sstep, dptr+=dstep )
+			for(i = range.start; i != range.end; i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptr+=sstep, dptr+=dstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -2714,16 +2713,16 @@ public:
 			const int gstep = 3*guide->cols;
 			const int dstep = 3*dest->cols;
 
-			uchar* sptrr =  (uchar*)temp->ptr(3*radiusV+3*range.begin()  ) + 16 * (radiusH/16 + 1);
-			uchar* sptrg =  (uchar*)temp->ptr(3*radiusV+3*range.begin()+1) + 16 * (radiusH/16 + 1);
-			uchar* sptrb =  (uchar*)temp->ptr(3*radiusV+3*range.begin()+2) + 16 * (radiusH/16 + 1);
-			uchar* gptrr = (uchar*)guide->ptr(3*radiusV+3*range.begin()  ) + 16 * (radiusH/16 + 1);
-			uchar* gptrg = (uchar*)guide->ptr(3*radiusV+3*range.begin()+1) + 16 * (radiusH/16 + 1);
-			uchar* gptrb = (uchar*)guide->ptr(3*radiusV+3*range.begin()+2) + 16 * (radiusH/16 + 1);
+			uchar* sptrr =  (uchar*)temp->ptr(3*radiusV+3*range.start  ) + 16 * (radiusH/16 + 1);
+			uchar* sptrg =  (uchar*)temp->ptr(3*radiusV+3*range.start+1) + 16 * (radiusH/16 + 1);
+			uchar* sptrb =  (uchar*)temp->ptr(3*radiusV+3*range.start+2) + 16 * (radiusH/16 + 1);
+			uchar* gptrr = (uchar*)guide->ptr(3*radiusV+3*range.start  ) + 16 * (radiusH/16 + 1);
+			uchar* gptrg = (uchar*)guide->ptr(3*radiusV+3*range.start+1) + 16 * (radiusH/16 + 1);
+			uchar* gptrb = (uchar*)guide->ptr(3*radiusV+3*range.start+2) + 16 * (radiusH/16 + 1);
 
-			uchar* dptr = dest->ptr(range.begin());
+			uchar* dptr = dest->ptr(range.start);
 
-			for(i = range.begin(); i != range.end(); i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep )
+			for(i = range.start; i != range.end; i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -2986,14 +2985,14 @@ public:
 
 			const int dstep = 3*dest->cols;
 
-			uchar* sptrr = (uchar*)temp->ptr(3*radiusV+3*range.begin()  ) + 16 * (radiusH/16 + 1);
-			uchar* sptrg = (uchar*)temp->ptr(3*radiusV+3*range.begin()+1) + 16 * (radiusH/16 + 1);
-			uchar* sptrb = (uchar*)temp->ptr(3*radiusV+3*range.begin()+2) + 16 * (radiusH/16 + 1);
-			uchar* gptr = (uchar*)guide->ptr(  radiusV+  range.begin()) + 16 * (radiusH/16 + 1);
+			uchar* sptrr = (uchar*)temp->ptr(3*radiusV+3*range.start  ) + 16 * (radiusH/16 + 1);
+			uchar* sptrg = (uchar*)temp->ptr(3*radiusV+3*range.start+1) + 16 * (radiusH/16 + 1);
+			uchar* sptrb = (uchar*)temp->ptr(3*radiusV+3*range.start+2) + 16 * (radiusH/16 + 1);
+			uchar* gptr = (uchar*)guide->ptr(  radiusV+  range.start) + 16 * (radiusH/16 + 1);
 
-			uchar* dptr = dest->ptr(range.begin());
+			uchar* dptr = dest->ptr(range.start);
 
-			for(i = range.begin(); i != range.end(); i++,gptr+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep )
+			for(i = range.start; i != range.end; i++,gptr+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -3358,7 +3357,7 @@ void weightedTrilateralFilter_32f( const Mat& src, Mat& weight, const Mat& guide
 
 	Mat dest = Mat::zeros(Size(src.cols+dpad, src.rows),dst.type());
 	WeightedTrilateralFilter_32f_InvokerSSE4 body(dest, temp, tempw,tempg,radiusH,radiusV, maxk, space_ofs, space_w_ofs,space_guide_ofs,space_weight, color_weight,color_guide_weight);
-	parallel_for(BlockedRange(0, size.height), body);
+	parallel_for_(Range(0, size.height), body);
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
 
@@ -3475,7 +3474,7 @@ void weightedTrilateralFilter_8u( const Mat& src, Mat& weight, const Mat& guide,
 
 	Mat dest = Mat::zeros(Size(src.cols+dpad, src.rows),dst.type());
 	WeightedTrilateralFilter_8u_InvokerSSE4 body(dest, temp, tempw,tempg,radiusH,radiusV, maxk, space_ofs, space_w_ofs,space_guide_ofs,space_weight, color_weight, color_guide_weight);
-	parallel_for(BlockedRange(0, size.height), body);
+	parallel_for_(Range(0, size.height), body);
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
 
@@ -3587,7 +3586,7 @@ void trilateralFilter_32f( const Mat& src, const Mat& guide, Mat& dst, Size kern
 
 	Mat dest = Mat::zeros(Size(src.cols+dpad, src.rows),dst.type());
 	TrilateralFilter_32f_InvokerSSE4 body(dest, temp, tempg,radiusH,radiusV, maxk, space_ofs, space_guide_ofs,space_weight, color_weight, color_guide_weight);
-	parallel_for(BlockedRange(0, size.height), body);
+	parallel_for_(Range(0, size.height), body);
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
 
@@ -3693,7 +3692,7 @@ void trilateralFilter_8u( const Mat& src, const Mat& guide, Mat& dst, Size kerne
 
 	Mat dest = Mat::zeros(Size(src.cols+dpad, src.rows),dst.type());
 	TrilateralFilter_8u_InvokerSSE4 body(dest, temp, tempg,radiusH,radiusV, maxk, space_ofs, space_guide_ofs,space_weight, color_weight, color_guide_weight);
-	parallel_for(BlockedRange(0, size.height), body);
+	parallel_for_(Range(0, size.height), body);
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
 
@@ -3775,7 +3774,7 @@ void weightedTrilateralFilter(const Mat& src, Mat& weightMap,const Mat& guide, M
 }
 
 
-class TrilateralWeightMap_32f_InvokerSSE4
+class TrilateralWeightMap_32f_InvokerSSE4 : public cv::ParallelLoopBody
 {
 public:
 	TrilateralWeightMap_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH,int _radiusV, int _maxk,
@@ -3785,7 +3784,7 @@ public:
 	{
 	}
 
-	virtual void operator() (const BlockedRange& range) const
+	virtual void operator() (const Range& range) const
 	{
 		int i, j, k;
 		int cn = (temp->rows-2*radiusV)/dest->rows;
@@ -3801,17 +3800,17 @@ public:
 			int CV_DECL_ALIGNED(16) buf[4];
 			int CV_DECL_ALIGNED(16) gbuf[4];
 
-			float* sptr = (float*)temp->ptr<float>(range.begin()+radiusV) + 4 * (radiusH/4 + 1);
-			float* gptr = (float*)guide->ptr<float>(range.begin()+radiusV) + 4 * (radiusH/4 + 1);
+			float* sptr = (float*)temp->ptr<float>(range.start+radiusV) + 4 * (radiusH/4 + 1);
+			float* gptr = (float*)guide->ptr<float>(range.start+radiusV) + 4 * (radiusH/4 + 1);
 
-			float* dptr = dest->ptr<float>(range.begin());
+			float* dptr = dest->ptr<float>(range.start);
 
 			const int sstep = temp->cols;
 			const int gstep = guide->cols;
 
 			const int dstep = dest->cols;
 
-			for(i = range.begin(); i != range.end(); i++,dptr+=dstep,sptr+=sstep,gptr+=gstep )
+			for(i = range.start; i != range.end; i++,dptr+=dstep,sptr+=sstep,gptr+=gstep )
 			{
 				j=0;
 #if CV_SSE4_1
@@ -3876,15 +3875,15 @@ public:
 			const int gstep = 3*guide->cols;
 			const int dstep = dest->cols;
 
-			float* sptrr = (float*)temp->ptr(3*radiusV+3*range.begin()  ) + 4 * (radiusH/4 + 1);
-			float* sptrg = (float*)temp->ptr(3*radiusV+3*range.begin()+1) + 4 * (radiusH/4 + 1);
-			float* sptrb = (float*)temp->ptr(3*radiusV+3*range.begin()+2) + 4 * (radiusH/4 + 1);
-			float* gptrr = (float*)guide->ptr(3*radiusV+3*range.begin()  ) + 4 * (radiusH/4 + 1);
-			float* gptrg = (float*)guide->ptr(3*radiusV+3*range.begin()+1) + 4 * (radiusH/4 + 1);
-			float* gptrb = (float*)guide->ptr(3*radiusV+3*range.begin()+2) + 4 * (radiusH/4 + 1);
+			float* sptrr = (float*)temp->ptr(3*radiusV+3*range.start  ) + 4 * (radiusH/4 + 1);
+			float* sptrg = (float*)temp->ptr(3*radiusV+3*range.start+1) + 4 * (radiusH/4 + 1);
+			float* sptrb = (float*)temp->ptr(3*radiusV+3*range.start+2) + 4 * (radiusH/4 + 1);
+			float* gptrr = (float*)guide->ptr(3*radiusV+3*range.start  ) + 4 * (radiusH/4 + 1);
+			float* gptrg = (float*)guide->ptr(3*radiusV+3*range.start+1) + 4 * (radiusH/4 + 1);
+			float* gptrb = (float*)guide->ptr(3*radiusV+3*range.start+2) + 4 * (radiusH/4 + 1);
 
-			float* dptr = dest->ptr<float>(range.begin());			
-			for(i = range.begin(); i != range.end(); i++,sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, gptrr+=gstep,gptrg+=gstep,gptrb+=gstep,dptr+=dstep )
+			float* dptr = dest->ptr<float>(range.start);			
+			for(i = range.start; i != range.end; i++,sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, gptrr+=gstep,gptrg+=gstep,gptrb+=gstep,dptr+=dstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -3984,14 +3983,14 @@ public:
 			const int gstep = 3*guide->cols;
 			const int dstep = dest->cols;
 
-			float* sptr = (float*)temp->ptr(radiusV+range.begin()  ) + 4 * (radiusH/4 + 1);
-			float* gptrr = (float*)guide->ptr(3*radiusV+3*range.begin()  ) + 4 * (radiusH/4 + 1);
-			float* gptrg = (float*)guide->ptr(3*radiusV+3*range.begin()+1) + 4 * (radiusH/4 + 1);
-			float* gptrb = (float*)guide->ptr(3*radiusV+3*range.begin()+2) + 4 * (radiusH/4 + 1);
+			float* sptr = (float*)temp->ptr(radiusV+range.start  ) + 4 * (radiusH/4 + 1);
+			float* gptrr = (float*)guide->ptr(3*radiusV+3*range.start  ) + 4 * (radiusH/4 + 1);
+			float* gptrg = (float*)guide->ptr(3*radiusV+3*range.start+1) + 4 * (radiusH/4 + 1);
+			float* gptrb = (float*)guide->ptr(3*radiusV+3*range.start+2) + 4 * (radiusH/4 + 1);
 
-			float* dptr = dest->ptr<float>(range.begin());	
+			float* dptr = dest->ptr<float>(range.start);	
 
-			for(i = range.begin(); i != range.end(); i++,sptr+=sstep, gptrr+=gstep,gptrg+=gstep,gptrb+=gstep,dptr+=dstep )
+			for(i = range.start; i != range.end; i++,sptr+=sstep, gptrr+=gstep,gptrg+=gstep,gptrb+=gstep,dptr+=dstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -4075,14 +4074,14 @@ public:
 			const int gstep = guide->cols;
 			const int dstep = dest->cols;
 
-			float* sptrr = (float*)temp->ptr(3*radiusV+3*range.begin()  ) + 4 * (radiusH/4 + 1);
-			float* sptrg = (float*)temp->ptr(3*radiusV+3*range.begin()+1) + 4 * (radiusH/4 + 1);
-			float* sptrb = (float*)temp->ptr(3*radiusV+3*range.begin()+2) + 4 * (radiusH/4 + 1);
-			float* gptr = (float*)guide->ptr(radiusV+range.begin()  ) + 4 * (radiusH/4 + 1);
+			float* sptrr = (float*)temp->ptr(3*radiusV+3*range.start  ) + 4 * (radiusH/4 + 1);
+			float* sptrg = (float*)temp->ptr(3*radiusV+3*range.start+1) + 4 * (radiusH/4 + 1);
+			float* sptrb = (float*)temp->ptr(3*radiusV+3*range.start+2) + 4 * (radiusH/4 + 1);
+			float* gptr = (float*)guide->ptr(radiusV+range.start  ) + 4 * (radiusH/4 + 1);
 			
-			float* dptr = dest->ptr<float>(range.begin());	
+			float* dptr = dest->ptr<float>(range.start);	
 
-			for(i = range.begin(); i != range.end(); i++, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, gptr+=gstep, dptr+=dstep )
+			for(i = range.start; i != range.end; i++, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, gptr+=gstep, dptr+=dstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -4167,7 +4166,7 @@ private:
 	float *space_weight, *color_weight, *guide_color_weight;
 };
 
-class TrilateralWeightMap_8u_InvokerSSE4
+class TrilateralWeightMap_8u_InvokerSSE4 : public cv::ParallelLoopBody
 {
 public:
 	TrilateralWeightMap_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH,int _radiusV, int _maxk,
@@ -4177,7 +4176,7 @@ public:
 	{
 	}
 
-	virtual void operator() (const BlockedRange& range) const
+	virtual void operator() (const Range& range) const
 	{
 		int i, j,  k;
 		int cn = (temp->rows-2*radiusV)/dest->rows;
@@ -4193,16 +4192,16 @@ public:
 			uchar CV_DECL_ALIGNED(16) buf[16];
 			uchar CV_DECL_ALIGNED(16) gbuf[16];
 
-			uchar* sptr = (uchar*)temp->ptr(range.begin()+radiusV) + 16 * (radiusH/16 + 1);
-			uchar* gptr = (uchar*)guide->ptr(range.begin()+radiusV) + 16 * (radiusH/16 + 1);
-			float* dptr = dest->ptr<float>(range.begin());
+			uchar* sptr = (uchar*)temp->ptr(range.start+radiusV) + 16 * (radiusH/16 + 1);
+			uchar* gptr = (uchar*)guide->ptr(range.start+radiusV) + 16 * (radiusH/16 + 1);
+			float* dptr = dest->ptr<float>(range.start);
 
 			const int sstep = temp->cols;
 			const int gstep = guide->cols;
 
 			const int dstep = dest->cols;
 
-			for(i = range.begin(); i != range.end(); i++,dptr+=dstep,sptr+=sstep, gptr+=gstep)
+			for(i = range.start; i != range.end; i++,dptr+=dstep,sptr+=sstep, gptr+=gstep)
 			{
 				j=0;
 #if CV_SSE4_1
@@ -4286,16 +4285,16 @@ public:
 
 			const int dstep = dest->cols;
 
-			uchar* sptrr = (uchar*)temp->ptr(3*radiusV+3*range.begin()  ) + 16 * (radiusH/16 + 1);
-			uchar* sptrg = (uchar*)temp->ptr(3*radiusV+3*range.begin()+1) + 16 * (radiusH/16 + 1);
-			uchar* sptrb = (uchar*)temp->ptr(3*radiusV+3*range.begin()+2) + 16 * (radiusH/16 + 1);
-			uchar* gptrr = (uchar*)guide->ptr(3*radiusV+3*range.begin()  ) + 16 * (radiusH/16 + 1);
-			uchar* gptrg = (uchar*)guide->ptr(3*radiusV+3*range.begin()+1) + 16 * (radiusH/16 + 1);
-			uchar* gptrb = (uchar*)guide->ptr(3*radiusV+3*range.begin()+2) + 16 * (radiusH/16 + 1);
+			uchar* sptrr = (uchar*)temp->ptr(3*radiusV+3*range.start  ) + 16 * (radiusH/16 + 1);
+			uchar* sptrg = (uchar*)temp->ptr(3*radiusV+3*range.start+1) + 16 * (radiusH/16 + 1);
+			uchar* sptrb = (uchar*)temp->ptr(3*radiusV+3*range.start+2) + 16 * (radiusH/16 + 1);
+			uchar* gptrr = (uchar*)guide->ptr(3*radiusV+3*range.start  ) + 16 * (radiusH/16 + 1);
+			uchar* gptrg = (uchar*)guide->ptr(3*radiusV+3*range.start+1) + 16 * (radiusH/16 + 1);
+			uchar* gptrb = (uchar*)guide->ptr(3*radiusV+3*range.start+2) + 16 * (radiusH/16 + 1);
 
-			float* dptr = dest->ptr<float>(range.begin());			
+			float* dptr = dest->ptr<float>(range.start);			
 
-			for(i = range.begin(); i != range.end(); i++,sptrr+=sstep,sptrg+=sstep,sptrb+=sstep,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep,dptr+=dstep )
+			for(i = range.start; i != range.end; i++,sptrr+=sstep,sptrg+=sstep,sptrb+=sstep,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep,dptr+=dstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -4440,14 +4439,14 @@ public:
 
 			const int dstep = dest->cols;
 
-			uchar* sptr = (uchar*)temp->ptr(range.begin()+radiusV) + 16 * (radiusH/16 + 1);
-			uchar* gptrr = (uchar*)guide->ptr(3*radiusV+3*range.begin()  ) + 16 * (radiusH/16 + 1);
-			uchar* gptrg = (uchar*)guide->ptr(3*radiusV+3*range.begin()+1) + 16 * (radiusH/16 + 1);
-			uchar* gptrb = (uchar*)guide->ptr(3*radiusV+3*range.begin()+2) + 16 * (radiusH/16 + 1);
+			uchar* sptr = (uchar*)temp->ptr(range.start+radiusV) + 16 * (radiusH/16 + 1);
+			uchar* gptrr = (uchar*)guide->ptr(3*radiusV+3*range.start  ) + 16 * (radiusH/16 + 1);
+			uchar* gptrg = (uchar*)guide->ptr(3*radiusV+3*range.start+1) + 16 * (radiusH/16 + 1);
+			uchar* gptrb = (uchar*)guide->ptr(3*radiusV+3*range.start+2) + 16 * (radiusH/16 + 1);
 
-			float* dptr = dest->ptr<float>(range.begin());			
+			float* dptr = dest->ptr<float>(range.start);			
 
-			for(i = range.begin(); i != range.end(); i++,sptr+=sstep,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, dptr+=dstep )
+			for(i = range.start; i != range.end; i++,sptr+=sstep,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, dptr+=dstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -4564,14 +4563,14 @@ public:
 
 			const int dstep = dest->cols;
 
-			uchar* sptrr = (uchar*)temp->ptr(3*radiusV+3*range.begin()  ) + 16 * (radiusH/16 + 1);
-			uchar* sptrg = (uchar*)temp->ptr(3*radiusV+3*range.begin()+1) + 16 * (radiusH/16 + 1);
-			uchar* sptrb = (uchar*)temp->ptr(3*radiusV+3*range.begin()+2) + 16 * (radiusH/16 + 1);
-			uchar* gptr = (uchar*)guide->ptr(  radiusV+  range.begin()  ) + 16 * (radiusH/16 + 1);
+			uchar* sptrr = (uchar*)temp->ptr(3*radiusV+3*range.start  ) + 16 * (radiusH/16 + 1);
+			uchar* sptrg = (uchar*)temp->ptr(3*radiusV+3*range.start+1) + 16 * (radiusH/16 + 1);
+			uchar* sptrb = (uchar*)temp->ptr(3*radiusV+3*range.start+2) + 16 * (radiusH/16 + 1);
+			uchar* gptr = (uchar*)guide->ptr(  radiusV+  range.start  ) + 16 * (radiusH/16 + 1);
 
-			float* dptr = dest->ptr<float>(range.begin());			
+			float* dptr = dest->ptr<float>(range.start);			
 
-			for(i = range.begin(); i != range.end(); i++,sptrr+=sstep,sptrg+=sstep,sptrb+=sstep,gptr+=gstep,dptr+=dstep )
+			for(i = range.start; i != range.end; i++,sptrr+=sstep,sptrg+=sstep,sptrb+=sstep,gptr+=gstep,dptr+=dstep )
 			{	
 				j=0;
 #if CV_SSE4_1
@@ -4792,7 +4791,7 @@ void trilateralWeightMap_32f( const Mat& src, const Mat& guide, Mat& dst, Size k
 
 	Mat dest = Mat::zeros(Size(src.cols+dpad, src.rows),CV_32F);
 	TrilateralWeightMap_32f_InvokerSSE4 body(dest, temp, tempg, radiusH, radiusV, maxk, space_ofs, space_g_ofs, space_weight, color_weight,color_guide_weight);
-	parallel_for(BlockedRange(0, size.height), body);
+	parallel_for_(Range(0, size.height), body);
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
 
@@ -4896,7 +4895,7 @@ void trilateralWeightMap_8u( const Mat& src, const Mat& guide, Mat& dst, Size ke
 
 	Mat dest = Mat::zeros(Size(src.cols+dpad, src.rows),CV_32F);
 	TrilateralWeightMap_8u_InvokerSSE4 body(dest, temp, tempg, radiusH, radiusV, maxk, space_ofs, space_g_ofs, space_weight, color_weight,color_guide_weight);
-	parallel_for(BlockedRange(0, size.height), body);
+	parallel_for_(Range(0, size.height), body);
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
 
@@ -4937,4 +4936,3 @@ void trilateralWeightMap(const Mat& src, const Mat& guide, Mat& dst, Size kernel
 		}
 	}
 }
-

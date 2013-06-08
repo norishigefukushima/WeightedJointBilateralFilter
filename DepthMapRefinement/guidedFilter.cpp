@@ -1,5 +1,4 @@
 #include "filter.h"
-#include <opencv2/core/internal.hpp>
 
 using namespace std;
 static const int BORDER_TYPE = cv::BORDER_REPLICATE;

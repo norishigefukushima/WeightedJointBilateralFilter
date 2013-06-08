@@ -1,5 +1,3 @@
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/internal.hpp>
 #include "filter.h"
 
 template <class T>

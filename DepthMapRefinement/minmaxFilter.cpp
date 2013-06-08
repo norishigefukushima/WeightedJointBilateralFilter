@@ -1,5 +1,4 @@
 #include "filter.h"
-#include "config.h"
 
 void blurRemoveMinMax(Mat& src, Mat& dest, const int r)
 {
